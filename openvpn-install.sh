@@ -666,15 +666,14 @@ function installOpenVPN() {
 	if [[ ! -e /etc/openvpn/server.conf ]]; then
 		if [[ $OS =~ (debian|ubuntu) ]]; then
 			apt-get update
-			apt-get -y install ca-certificates gnupg
-			# We add the OpenVPN repo to get the latest version.
-			if [[ $VERSION_ID == "16.04" ]]; then
-				echo "deb http://build.openvpn.net/debian/openvpn/stable xenial main" >/etc/apt/sources.list.d/openvpn.list
-				wget -O - https://swupdate.openvpn.net/repos/repo-public.gpg | apt-key add -
-				apt-get update
-			fi
-			# Ubuntu > 16.04 and Debian > 8 have OpenVPN >= 2.4 without the need of a third party repository.
-			apt-get install -y openvpn iptables openssl wget ca-certificates curl
+			apt-get -y install gnupg curl iptables openssl wget ca-certificates
+   			curl https://swupdate.openvpn.net/repos/repo-public.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/openvpn-keyring.gpg >/dev/null
+	  		# Uncomment or run manually for sanity check for key matching check.
+	  		# gpg --dry-run --quiet --no-keyring --import --import-options import-show /usr/share/keyrings/openvpn-keyring.gpg
+	 		echo "deb [signed-by=/usr/share/keyrings/openvpn-keyring.gpg] http://build.openvpn.net/debian/openvpn/stable `lsb_release -cs` main" >/etc/apt/sources.list.d/openvpn.list
+			echo -e "Package: *\nPin: origin openvpn.net\nPin: release o=openvpn\nPin-Priority: 900\n" | sudo tee /etc/apt/preferences.d/100openvpn
+			apt-get update
+			apt-get install -y openvpn
 		elif [[ $OS == 'centos' ]]; then
 			yum install -y epel-release
 			yum install -y openvpn iptables openssl wget ca-certificates curl tar 'policycoreutils-python*'
